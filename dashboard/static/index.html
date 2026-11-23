@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PowerPulse</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo"><span class="rayo">⚡</span> PowerPulse</div>
+    <nav>
+      <button class="nav activo" data-vista="inicio">⌂ Inicio</button>
+      <button class="nav" data-vista="bateria">▭ Batería y energía</button>
+      <button class="nav" data-vista="sistema">≡ Sistema y ahorro</button>
+      <button class="nav" data-vista="alertas">🔔 Alertas e historial</button>
+    </nav>
+    <div class="pie"><span>v1.0</span><span id="estadoLateral" class="punto">Monitoreo en tiempo real</span></div>
+  </aside>
+
+  <main>
+    <div id="avisoServidor" class="aviso" hidden>⚠ Sin conexión con el servidor de PowerPulse. Se muestran los últimos datos recibidos; verifica que el dashboard (Flask) siga abierto.</div>
+    <!-- ============ INICIO ============ -->
+    <section id="vista-inicio" class="vista activa">
+      <header class="titulo">
+        <div><h1>Bienvenida</h1><p>Estado general de tu equipo y rendimiento del sistema.</p></div>
+        <div class="derecha"><span id="fechaHora" class="tenue"></span><span id="estadoSistema" class="chip"></span></div>
+      </header>
+      <div class="grid4">
+        <div class="card"><small>Batería</small><b id="kBateria">–</b><div class="barra"><i id="bBateria"></i></div><small id="kBateriaSub" class="tenue"></small></div>
+        <div class="card"><small>Estado de carga</small><b id="kCarga">–</b><small id="kCargaSub" class="tenue"></small></div>
+        <div class="card"><small>Uso de CPU</small><b id="kCpu">–</b><div class="barra azul"><i id="bCpu"></i></div><small id="kCpuSub" class="tenue"></small></div>
+        <div class="card"><small>Tasa de descarga</small><b id="kTasa">–</b><small id="kTasaSub" class="tenue"></small></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Historial de batería (hoy)</h3><canvas id="gHistorial" height="220"></canvas></div>
+        <div class="card"><h3>Alertas recientes <a href="#" data-ir="alertas">Ver todas →</a></h3><div id="alertasRecientes"></div></div>
+      </div>
+    </section>
+
+    <!-- ============ BATERÍA ============ -->
+    <section id="vista-bateria" class="vista">
+      <header class="titulo"><div><h1>Batería y energía</h1><p>Estado de la batería, su salud y la evolución del consumo.</p></div></header>
+      <div class="grid4">
+        <div class="card fila"><canvas id="gNivel" width="90" height="90"></canvas><div><b class="chico">Nivel de carga</b><small id="nivelSub" class="tenue"></small></div></div>
+        <div class="card"><small>Salud estimada</small><b id="kSalud">–</b><span id="kSaludChip" class="chip"></span></div>
+        <div class="card"><small>Capacidad de diseño</small><b id="kDiseno">–</b><small id="kActual" class="tenue"></small></div>
+        <div class="card"><small>Ciclos de carga</small><b id="kCiclos">–</b><small class="tenue">Ciclos registrados</small></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Evolución de la salud (últimos 30 días)</h3><canvas id="gSalud" height="200"></canvas></div>
+        <div class="columna">
+          <div class="card"><small id="kRestanteTit">Tiempo estimado restante</small><b id="kRestante">–</b></div>
+          <div class="card"><small>Voltaje</small><b id="kVoltaje">–</b></div>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="card"><small>Consumo promedio</small><b id="cProm">–</b></div>
+        <div class="card"><small>Consumo máximo</small><b id="cMax">–</b></div>
+        <div class="card"><small>Consumo mínimo</small><b id="cMin">–</b></div>
+      </div>
+    </section>
+
+    <!-- ============ SISTEMA ============ -->
+    <section id="vista-sistema" class="vista">
+      <header class="titulo"><div><h1>Sistema y ahorro energético</h1><p>Perfil de energía, política de ahorro y recomendaciones.</p></div></header>
+      <div class="grid2">
+        <div class="columna">
+          <div class="card"><h3>Perfil de energía (ACPI)</h3><div class="caja"><b id="plan">–</b><span id="planChip" class="chip"></span><small class="tenue">Plan activo de Windows</small></div></div>
+          <div class="card"><h3>Política automática de ahorro</h3><p id="politica" class="tenue"></p></div>
+          <div class="card"><h3>Temperatura del sistema</h3><p class="tenue">Fase futura: requiere permisos de administrador y no todas las laptops la reportan.</p></div>
+        </div>
+        <div class="card"><h3>Recomendaciones energéticas</h3><div id="recomendaciones"></div></div>
+      </div>
+    </section>
+
+    <!-- ============ ALERTAS ============ -->
+    <section id="vista-alertas" class="vista">
+      <header class="titulo">
+        <div><h1>Alertas e historial</h1><p>Eventos registrados por el gestor en los últimos 7 días.</p></div>
+        <a class="boton" href="/api/alertas/exportar?dias=7">⬇ Exportar CSV</a>
+      </header>
+      <div class="grid2">
+        <div class="card"><h3>Eventos y alertas</h3>
+          <table><thead><tr><th>Fecha / hora</th><th>Tipo</th><th>Descripción</th><th>Nivel</th></tr></thead><tbody id="tablaAlertas"></tbody></table>
+        </div>
+        <div class="columna">
+          <div class="card fila"><canvas id="gResumen" width="120" height="120"></canvas><div id="leyenda"></div></div>
+          <div class="card"><h3>Últimos 7 días</h3><canvas id="gDias" height="150"></canvas></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
