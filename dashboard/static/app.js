@@ -159,8 +159,9 @@ async function verInicio() {
       $('kTasa').innerHTML = v == null ? '–' : '+' + v.toFixed(2) + '<span class="tenue"> %/min</span>';
       $('kTasaSub').textContent = v == null ? 'Cargando' : 'Cargando (velocidad de carga)';
     } else {
-      $('kTasa').innerHTML = fmt(u.tasa_descarga_min, '', 2) + '<span class="tenue"> %/min</span>';
-      $('kTasaSub').textContent = u.tasa_descarga_min > 1 ? 'Descarga rápida' : 'Estable';
+      const t = d.velocidad_descarga != null ? d.velocidad_descarga : u.tasa_descarga_min;  // promedio de los últimos 10 min
+      $('kTasa').innerHTML = fmt(t, '', 2) + '<span class="tenue"> %/min</span>';
+      $('kTasaSub').textContent = t > 1 ? 'Descarga rápida' : 'Estable (promedio 10 min)';
     }
   }
   lineaTiempo('gHistorial', d.historial, '#2563eb');
@@ -188,7 +189,10 @@ async function verBateria() {
     $('kRestante').textContent = falta <= 0 ? 'Carga completa' : v > 0 ? '≈ ' + horas(falta / v * 60) : 'Calculando…';
   } else {
     $('kRestanteTit').textContent = 'Tiempo estimado restante';
-    $('kRestante').textContent = seg > 0 ? horas(seg) : '–';
+    const tasa = u.tasa_descarga_min > 0 ? u.tasa_descarga_min : d.velocidad_descarga, bat = u.porcentaje_bateria;  // promedio de los últimos 10 min si la última lectura dio 0
+    if (seg > 0) $('kRestante').textContent = horas(seg);                       // dato de Windows
+    else if (tasa > 0 && bat > 0) $('kRestante').textContent = '≈ ' + horas(bat / tasa * 60) + ' (est.)';  // Windows no lo da: se estima
+    else $('kRestante').textContent = 'Calculando…';
   }
   $('kVoltaje').textContent = u.voltaje_mv ? (u.voltaje_mv / 1000).toFixed(2) + ' V' : '–';
   const saludes = d.salud_por_dia.map(p => p.salud);

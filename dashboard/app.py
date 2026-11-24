@@ -72,13 +72,14 @@ def reducir(filas, maximo=300):
   return filas[::paso]
 
 
-def velocidad_carga(filas, minutos=10):
-  """Con el cargador conectado: cuántos % por minuto sube la batería (últimos `minutos`)."""
-  if not filas or not filas[-1]['cargando']:
+def velocidad(filas, cargando, minutos=10):
+  """Cuántos % por minuto cambia la batería en los últimos `minutos`
+  (positivo: sube al cargar; con cargando=False devuelve cuánto baja)."""
+  if not filas or bool(filas[-1]['cargando']) != cargando:
     return None
   limite = (datetime.strptime(filas[-1]['momento'], '%Y-%m-%d %H:%M:%S')
             - timedelta(minutes=minutos)).strftime('%Y-%m-%d %H:%M:%S')
-  tramo = [f for f in filas if f['momento'] >= limite and f['cargando']
+  tramo = [f for f in filas if f['momento'] >= limite and bool(f['cargando']) == cargando
            and f['porcentaje_bateria'] is not None]
   if len(tramo) < 2:
     return None
@@ -87,7 +88,16 @@ def velocidad_carga(filas, minutos=10):
   duracion_min = (fin - inicio).total_seconds() / 60
   if duracion_min <= 0:
     return None
-  return round((tramo[-1]['porcentaje_bateria'] - tramo[0]['porcentaje_bateria']) / duracion_min, 2)
+  cambio = tramo[-1]['porcentaje_bateria'] - tramo[0]['porcentaje_bateria']
+  return round(cambio / duracion_min if cargando else -cambio / duracion_min, 2)
+
+
+def velocidad_carga(filas):
+  return velocidad(filas, True)
+
+
+def velocidad_descarga(filas):
+  return velocidad(filas, False)
 
 
 def consumo_estimado(fila):
@@ -121,6 +131,7 @@ def api_resumen():
       'ultimo': ultimo,
       'activo': activo,
       'velocidad_carga': velocidad_carga(filas),
+      'velocidad_descarga': velocidad_descarga(filas),
       'historial': [{'momento': f['momento'], 'bateria': f['porcentaje_bateria']}
                     for f in reducir(filas)],
       'alertas_recientes': alertas(7)[:3],
@@ -143,6 +154,7 @@ def api_bateria():
   return jsonify({
       'ultimo': ultimo,
       'velocidad_carga': velocidad_carga(filas),
+      'velocidad_descarga': velocidad_descarga(filas),
       'salud_por_dia': [{'fecha': d, 'salud': s} for d, s in sorted(por_dia.items())],
       'consumo': {
           'promedio': round(sum(consumos) / len(consumos), 2) if consumos else None,
